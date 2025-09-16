@@ -29,8 +29,9 @@
     | Views: {{ news.news_views }}</p>
 
   {% if news.thumbnail %}
-  <img src="{{ news.thumbnail }}" alt="thumbnail" width="150" height="100">
-  <br />
+      <img src="{{ news.thumbnail }}" alt="Thumbnail" style="max-width:300px;">
+  {% else %}
+      <p>No thumbnail available.</p>
   {% endif %}
 
   <p>{{ news.content|truncatewords:25 }}...</p>

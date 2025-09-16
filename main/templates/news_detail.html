@@ -8,10 +8,11 @@
     <b>Hot</b>{% endif %} | <i>{{ news.created_at|date:"d M Y, H:i" }}</i> 
     | Views: {{ news.news_views }}</p>
 
-{% if news.thumbnail %}
-<img src="{{ news.thumbnail }}" alt="News thumbnail" width="300">
-<br /><br />
-{% endif %}
+    {% if news.thumbnail %}
+        <img src="{{ news.thumbnail }}" alt="Thumbnail" style="max-width:300px;">
+    {% else %}
+        <p>No thumbnail available.</p>
+    {% endif %}
 
 <p>{{ news.content }}</p>
 
