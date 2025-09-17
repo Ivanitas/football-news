@@ -113,7 +113,7 @@ def create_news(request):
     return render(request, "create_news.html", context)
 
 @login_required(login_url='/login')
-def show_news(request):
+def show_news(request, id):
     news = get_object_or_404(News, pk=id)
     news.increment_views()
 
