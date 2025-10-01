@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from main.forms import NewsForm
 from main.models import News
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.core import serializers
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
@@ -10,6 +10,69 @@ from django.contrib.auth.decorators import login_required
 import datetime
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.utils.html import strip_tags
+
+@csrf_exempt
+@require_POST
+def add_news_entry_ajax(request):
+    title = strip_tags(request.POST.get("title")) # strip HTML tags!
+    content = strip_tags(request.POST.get("content")) # strip HTML tags!
+    title = request.POST.get("title")
+    content = request.POST.get("content")
+    category = request.POST.get("category")
+    thumbnail = request.FILES.get("thumbnail")  # Changed to FILES for image upload
+    is_featured = request.POST.get("is_featured") == 'on'
+    user = request.user
+
+    new_news = News(
+        title=title, 
+        content=content,
+        category=category,
+        thumbnail=thumbnail,
+        is_featured=is_featured,
+        user=user
+    )
+    new_news.save()
+
+def show_json_by_id(request, news_id):
+    try:
+        news = News.objects.select_related('user').get(pk=news_id)
+        data = {
+            'id': str(news.id),
+            'title': news.title,
+            'content': news.content,
+            'category': news.category,
+            'thumbnail': news.thumbnail if news.thumbnail else '',
+            'news_views': news.news_views,
+            'created_at': news.created_at.isoformat() if news.created_at else None,
+            'is_featured': news.is_featured,
+            'user_id': news.user_id,
+            'user_username': news.user.username if news.user_id else None,
+        }
+        return JsonResponse(data)
+    except News.DoesNotExist:
+        return JsonResponse({'detail': 'Not found'}, status=404)
+
+def show_json(request):
+    news_list = News.objects.all().select_related('user').order_by('-created_at')
+    data = []
+    for news in news_list:
+        data.append({
+            'id': str(news.id),
+            'title': news.title,
+            'content': news.content,
+            'category': news.category,
+            'thumbnail': news.thumbnail if news.thumbnail else '',  # Langsung gunakan string
+            'news_views': news.news_views,
+            'created_at': news.created_at.isoformat(),
+            'is_featured': news.is_featured,
+            'user_id': news.user_id,
+            'user_name': news.user.username if news.user else 'Anonymous',
+        })
+    
+    return JsonResponse(data, safe=False)
 
 def delete_news(request, id):
     news = get_object_or_404(News, pk=id)
@@ -18,7 +81,7 @@ def delete_news(request, id):
 
 def edit_news(request, id):
     news = get_object_or_404(News, pk=id)
-    form = NewsForm(request.POST or None, instance=news)
+    form = NewsForm(request.POST or None, request.FILES or None, instance=news)
     if form.is_valid() and request.method == 'POST':
         form.save()
         return redirect('main:show_main')
@@ -71,33 +134,14 @@ def show_xml_by_id(request, news_id):
    except News.DoesNotExist:
        return HttpResponse(status=404)
 
-def show_json_by_id(request, news_id):
-   try:
-       news_item = News.objects.get(pk=news_id)
-       json_data = serializers.serialize("json", [news_item])
-       return HttpResponse(json_data, content_type="application/json")
-   except News.DoesNotExist:
-       return HttpResponse(status=404)
-
-def show_xml(request):
-    news_list = News.objects.all()
-
 def show_xml(request):
     news_list = News.objects.all()
     xml_data = serializers.serialize("xml", news_list)
     return HttpResponse(xml_data, content_type="application/xml")
 
-def show_json(request):
-    news_list = News.objects.all()
-
-def show_json(request):
-    news_list = News.objects.all()
-    json_data = serializers.serialize("json", news_list)
-    return HttpResponse(json_data, content_type="application/json")
-
 @login_required(login_url='/login')
 def show_main(request):
-    filter_type = request.GET.get("filter", "all")  # default 'all'
+    filter_type = request.GET.get("filter", "all")
 
     if filter_type == "all":
         news_list = News.objects.all()
@@ -106,19 +150,19 @@ def show_main(request):
 
     context = {
         'npm': '2406435250',
-        'name' : 'Muhammad Iffan Chalif Aziz',
+        'name': 'Muhammad Iffan Chalif Aziz',
         'username': request.user.username,
         'class': 'PBP B',
         'news_list': news_list,
         'last_login': request.COOKIES.get('last_login', 'Never')
     }
-    return render(request, "main.html",context)
+    return render(request, "main.html", context)
 
 def create_news(request):
-    form = NewsForm(request.POST or None)
+    form = NewsForm(request.POST or None, request.FILES or None)
 
     if form.is_valid() and request.method == 'POST':
-        news_entry = form.save(commit = False)
+        news_entry = form.save(commit=False)
         news_entry.user = request.user
         news_entry.save()
         return redirect('main:show_main')
@@ -139,6 +183,3 @@ def show_news(request, id):
     }
 
     return render(request, "news_detail.html", context)
-
-def show_json(request):
-    news_list = News.objects.all()
