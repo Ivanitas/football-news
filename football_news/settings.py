@@ -31,13 +31,8 @@ SECRET_KEY = 'django-insecure-(jwp^v%nzdk+dr1scxgw-=oue&wb=t7c+$^5c--0srv9id%o3%
 PRODUCTION = os.getenv('PRODUCTION', 'False').lower() == 'true'
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "muhammad-iffan-footballnews.pbp.cs.ui.ac.id"]
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://muhammad-iffan-footballnews.pbp.cs.ui.ac.id"
-]
-
-
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "10.0.2.2", "muhammad-iffan-footballnews.pbp.cs.ui.ac.id"]
+ 
 # Application definition
 
 INSTALLED_APPS = [
@@ -47,7 +42,43 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'main'
+    'main',
+    'authentication',     
+    'corsheaders',
+]
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000", 
+    "http://localhost:9101",
+    "http://127.0.0.1:9101",
+    "http://localhost:63574",
+    "http://127.0.0.1:63574",
+    "https://muhammad-iffan-footballnews.pbp.cs.ui.ac.id",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:9101",
+    "http://127.0.0.1:9101",
+    "http://localhost:63574",
+    "http://127.0.0.1:63574",
+]
+
+# Tambahkan ini juga
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
 ]
 
 MIDDLEWARE = [
@@ -59,6 +90,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'football_news.urls'
