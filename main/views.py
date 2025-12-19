@@ -14,21 +14,15 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.utils.html import strip_tags
 import requests
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse
-from django.utils.html import strip_tags
 import json
-from django.http import JsonResponse
 
 @csrf_exempt
 @require_POST
 def add_news_entry_ajax(request):
-    title = strip_tags(request.POST.get("title")) # strip HTML tags!
-    content = strip_tags(request.POST.get("content")) # strip HTML tags!
-    title = request.POST.get("title")
-    content = request.POST.get("content")
+    title = strip_tags(request.POST.get("title"))
+    content = strip_tags(request.POST.get("content"))
     category = request.POST.get("category")
-    thumbnail = request.FILES.get("thumbnail")  # Changed to FILES for image upload
+    thumbnail = request.POST.get("thumbnail")  # String URL, bukan FileField
     is_featured = request.POST.get("is_featured") == 'on'
     user = request.user
 
@@ -41,6 +35,8 @@ def add_news_entry_ajax(request):
         user=user
     )
     new_news.save()
+    
+    return JsonResponse({"status": "success", "message": "News created successfully"}, status=201)
 
 def show_json_by_id(request, news_id):
     try:
@@ -50,7 +46,7 @@ def show_json_by_id(request, news_id):
             'title': news.title,
             'content': news.content,
             'category': news.category,
-            'thumbnail': news.thumbnail if news.thumbnail else '',
+            'thumbnail': news.thumbnail,  # Langsung return string
             'news_views': news.news_views,
             'created_at': news.created_at.isoformat() if news.created_at else None,
             'is_featured': news.is_featured,
@@ -70,7 +66,7 @@ def show_json(request):
             'title': news.title,
             'content': news.content,
             'category': news.category,
-            'thumbnail': news.thumbnail if news.thumbnail else '',  # Langsung gunakan string
+            'thumbnail': news.thumbnail,  # Langsung return string, tanpa .url
             'news_views': news.news_views,
             'created_at': news.created_at.isoformat(),
             'is_featured': news.is_featured,
@@ -87,7 +83,7 @@ def delete_news(request, id):
 
 def edit_news(request, id):
     news = get_object_or_404(News, pk=id)
-    form = NewsForm(request.POST or None, request.FILES or None, instance=news)
+    form = NewsForm(request.POST or None, instance=news)
     if form.is_valid() and request.method == 'POST':
         form.save()
         return redirect('main:show_main')
@@ -165,7 +161,7 @@ def show_main(request):
     return render(request, "main.html", context)
 
 def create_news(request):
-    form = NewsForm(request.POST or None, request.FILES or None)
+    form = NewsForm(request.POST or None)
 
     if form.is_valid() and request.method == 'POST':
         news_entry = form.save(commit=False)
